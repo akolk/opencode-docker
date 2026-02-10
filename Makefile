@@ -1,6 +1,6 @@
 # Multi-arch build support for Docker images
 REGISTRY ?= ghcr.io
-IMAGE_NAME ?= YOUR_USERNAME/opencode-analyzer
+IMAGE_NAME ?= akolk/opencode-analyzer
 TAG ?= latest
 FULL_IMAGE = $(REGISTRY)/$(IMAGE_NAME):$(TAG)
 

@@ -39,7 +39,7 @@ Docker Container
 ### 1. Clone Repository
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/opencode-analyzer.git
+git clone https://github.com/akolk/opencode-analyzer.git
 cd opencode-analyzer
 ```
 

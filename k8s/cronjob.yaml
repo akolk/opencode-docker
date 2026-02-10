@@ -36,7 +36,7 @@ spec:
           
           containers:
           - name: opencode-analyzer
-            image: ghcr.io/YOUR_USERNAME/opencode-analyzer:latest
+            image: ghcr.io/akolk/opencode-analyzer:latest
             imagePullPolicy: Always
             
             env:
