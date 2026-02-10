@@ -73,13 +73,28 @@ Update the Ollama host:
 
 **Option A: Use Pre-built Image (Recommended)**
 
-The GitHub Actions workflow automatically builds and publishes images:
+The GitHub Actions workflow automatically builds and publishes images to the GitHub Container Registry:
+
+**Package URL**: https://github.com/akolk/opencode-docker/pkgs/container/opencode-docker
 
 ```bash
-# Images are available at:
-# ghcr.io/akolk/opencode-docker:latest
-# ghcr.io/akolk/opencode-docker:v1.0.0 (tagged releases)
+# Pull the latest image
+docker pull ghcr.io/akolk/opencode-docker:latest
+
+# Or a specific version
+docker pull ghcr.io/akolk/opencode-docker:v1.0.0
 ```
+
+**Available Tags**:
+- `latest` - Latest build from main branch
+- `v1.0.0` - Specific version (replace with actual tag)
+- `sha-xxxxxx` - Specific commit SHA
+
+**⚠️ Important**: After the first workflow run, you need to make the package public:
+1. Go to: https://github.com/akolk/opencode-docker/pkgs/container/opencode-docker
+2. Click **"Package settings"**
+3. Under **"Visibility"**, select **"Public"** (or keep Private if preferred)
+4. Click **"Save"**
 
 **Option B: Build Locally**
 
