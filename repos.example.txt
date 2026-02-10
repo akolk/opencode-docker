@@ -1,0 +1,22 @@
+# Example repository list
+# Add one repository per line in format: owner/repo
+# Lines starting with # are ignored
+# Blank lines are ignored
+
+# Public repositories
+facebook/react
+kubernetes/kubernetes
+microsoft/vscode
+ golang/go
+ python/cpython
+
+# You can organize with comments
+# Frontend projects
+# vercel/next.js
+# vuejs/vue
+
+# Backend projects
+# expressjs/express
+# fastify/fastify
+
+# Add your own repositories below:

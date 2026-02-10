@@ -1,0 +1,125 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: opencode-analyzer
+  namespace: opencode-analyzer
+  labels:
+    app: opencode-analyzer
+spec:
+  # Schedule: Run at 8:00 AM and 8:00 PM daily
+  # Format: minute hour day month day-of-week
+  schedule: "0 8,20 * * *"
+  
+  # Optional: Run immediately when deployed for testing
+  # Remove this in production
+  # startingDeadlineSeconds: 3600
+  
+  # Concurrency policy
+  concurrencyPolicy: Forbid
+  
+  # Keep history
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  
+  jobTemplate:
+    spec:
+      # Time limit for the entire job
+      activeDeadlineSeconds: 7200  # 2 hours max
+      
+      template:
+        metadata:
+          labels:
+            app: opencode-analyzer
+        spec:
+          # Don't restart on failure (we want to capture logs)
+          restartPolicy: Never
+          
+          containers:
+          - name: opencode-analyzer
+            image: ghcr.io/YOUR_USERNAME/opencode-analyzer:latest
+            imagePullPolicy: Always
+            
+            env:
+            # Ollama configuration
+            - name: OLLAMA_HOST
+              value: "http://ollama.your-domain.com:11434"  # Change to your Ollama endpoint
+              
+            - name: OLLAMA_MODEL
+              value: "codellama:7b-code"
+              
+            # Git configuration
+            - name: GIT_AUTHOR_NAME
+              value: "OpenCode Bot"
+              
+            - name: GIT_AUTHOR_EMAIL
+              value: "opencode-bot@example.com"
+            
+            # Paths
+            - name: REPOS_FILE
+              value: "/config/repos.txt"
+              
+            - name: OUTPUT_DIR
+              value: "/output"
+            
+            # GitHub Token from Secret
+            - name: GITHUB_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: github-token
+                  key: GITHUB_TOKEN
+            
+            volumeMounts:
+            # Mount repository list
+            - name: repos-config
+              mountPath: /config
+              readOnly: true
+            
+            # Mount output directory for logs and backups
+            - name: output
+              mountPath: /output
+            
+            resources:
+              requests:
+                memory: "512Mi"
+                cpu: "500m"
+              limits:
+                memory: "2Gi"
+                cpu: "2000m"
+            
+            # Health check (optional - job runs to completion)
+            # livenessProbe:
+            #   exec:
+            #     command:
+            #     - pgrep
+            #     - entrypoint.sh
+            #   initialDelaySeconds: 30
+            #   periodSeconds: 60
+          
+          volumes:
+          # Repository list ConfigMap
+          - name: repos-config
+            configMap:
+              name: opencode-repos
+          
+          # Output directory
+          - name: output
+            persistentVolumeClaim:
+              claimName: opencode-output
+          
+          # Optional: Node selector for ARM64 nodes
+          # affinity:
+          #   nodeAffinity:
+          #     requiredDuringSchedulingIgnoredDuringExecution:
+          #       nodeSelectorTerms:
+          #       - matchExpressions:
+          #         - key: kubernetes.io/arch
+          #           operator: In
+          #           values:
+          #           - arm64
+          
+          # Optional: Tolerations for tainted nodes
+          # tolerations:
+          # - key: "dedicated"
+          #   operator: "Equal"
+          #   value: "opencode"
+          #   effect: "NoSchedule"

@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: opencode-repos
+  namespace: opencode-analyzer
+data:
+  repos.txt: |
+    # Add your repositories here (one per line)
+    # Format: owner/repo
+    # Lines starting with # are ignored
+    
+    # Example repositories (replace with your own):
+    # facebook/react
+    # kubernetes/kubernetes
+    # microsoft/vscode
+    
+    # Add your repositories below:
