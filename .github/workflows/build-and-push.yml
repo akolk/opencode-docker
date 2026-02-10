@@ -61,10 +61,11 @@ jobs:
             type=semver,pattern={{major}}
             type=sha,prefix=,suffix=,format=short
       
-      - name: Build and push Docker image
+      - name: Build and push Docker image (Standard)
         uses: docker/build-push-action@v5
         with:
           context: .
+          file: ./Dockerfile
           platforms: linux/amd64,linux/arm64
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
@@ -72,8 +73,38 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
       
-      - name: Output image digest
+      - name: Extract metadata for Autonomous
+        id: meta-autonomous
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          flavor: |
+            suffix=-autonomous,onlatest=true
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=sha,prefix=,suffix=,format=short
+      
+      - name: Build and push Docker image (Autonomous)
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile.autonomous
+          platforms: linux/amd64,linux/arm64
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta-autonomous.outputs.tags }}
+          labels: ${{ steps.meta-autonomous.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      
+      - name: Output image digests
         if: github.event_name != 'pull_request'
         run: |
-          echo "Image built and pushed successfully!"
+          echo "Standard image built and pushed successfully!"
           echo "Tags: ${{ steps.meta.outputs.tags }}"
+          echo ""
+          echo "Autonomous image built and pushed successfully!"
+          echo "Tags: ${{ steps.meta-autonomous.outputs.tags }}"
