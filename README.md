@@ -69,14 +69,26 @@ Update the Ollama host:
   value: "http://your-ollama-server:11434"
 ```
 
-### 3. Build and Push Image
+### 3. Get the Docker Image
+
+**Option A: Use Pre-built Image (Recommended)**
+
+The GitHub Actions workflow automatically builds and publishes images:
+
+```bash
+# Images are available at:
+# ghcr.io/akolk/opencode-docker:latest
+# ghcr.io/akolk/opencode-docker:v1.0.0 (tagged releases)
+```
+
+**Option B: Build Locally**
 
 ```bash
 # Set up multi-arch builder (one time)
 make setup-buildx
 
 # Build and push to registry
-make push REGISTRY=ghcr.io IMAGE_NAME=yourusername/opencode-analyzer TAG=latest
+make push REGISTRY=ghcr.io IMAGE_NAME=akolk/opencode-docker TAG=latest
 ```
 
 ### 4. Deploy to K3s
@@ -90,6 +102,50 @@ make k8s-deploy
 ```bash
 make k8s-run-now
 ```
+
+## Automated CI/CD Builds
+
+This repository includes **GitHub Actions** workflows that automatically build and push multi-arch Docker images:
+
+### Build & Push Workflow
+
+**File**: `.github/workflows/build-and-push.yml`
+
+**Triggers**:
+- Push to `main` branch
+- Push version tags (`v*`)  
+- Manual dispatch via GitHub UI
+- Pull requests (build only, no push)
+
+**Features**:
+- ✅ Multi-platform builds: `linux/amd64`, `linux/arm64`
+- ✅ Pushes to GitHub Container Registry (`ghcr.io`)
+- ✅ Automatic tagging: branch names, semver, git SHA
+- ✅ Layer caching for faster builds
+- ✅ Test builds on PRs without pushing
+
+### Using Pre-built Images
+
+Instead of building locally, you can use the automated builds:
+
+```bash
+# Pull the latest image
+docker pull ghcr.io/akolk/opencode-docker:latest
+
+# Or a specific version
+docker pull ghcr.io/akolk/opencode-docker:v1.0.0
+```
+
+Update your K8s deployment to use:
+```yaml
+image: ghcr.io/akolk/opencode-docker:latest
+```
+
+### Workflow Status
+
+[![Build and Push](https://github.com/akolk/opencode-docker/actions/workflows/build-and-push.yml/badge.svg)](https://github.com/akolk/opencode-docker/actions/workflows/build-and-push.yml)
+
+View all runs: [Actions Tab](https://github.com/akolk/opencode-docker/actions)
 
 ## Configuration
 
