@@ -1,0 +1,92 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: opencode-autonomous
+  namespace: opencode-analyzer
+  labels:
+    app: opencode-analyzer
+    mode: autonomous
+spec:
+  # Schedule: Run twice daily (8 AM & 8 PM)
+  schedule: "0 8,20 * * *"
+  
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 5
+  failedJobsHistoryLimit: 5
+  
+  jobTemplate:
+    spec:
+      activeDeadlineSeconds: 10800  # 3 hours max
+      
+      template:
+        metadata:
+          labels:
+            app: opencode-analyzer
+            mode: autonomous
+        spec:
+          restartPolicy: Never
+          
+          containers:
+          - name: opencode-analyzer
+            # Use the autonomous mode image
+            image: ghcr.io/akolk/opencode-docker:autonomous-latest
+            imagePullPolicy: Always
+            
+            env:
+            # Ollama configuration
+            - name: OLLAMA_HOST
+              value: "http://your-ollama-server:11434"
+              
+            - name: OLLAMA_MODEL
+              value: "codellama:7b-code"
+              # Alternative models:
+              # value: "llama3:8b"
+              # value: "codellama:13b-code"
+              # value: "mistral:7b"
+            
+            # Branch configuration
+            - name: BRANCH_WORK
+              value: "develop"
+              
+            - name: BRANCH_MAIN
+              value: "main"
+            
+            # Auto-merge behavior
+            - name: AUTO_MERGE
+              value: "true"
+            
+            # Git configuration
+            - name: GIT_AUTHOR_NAME
+              value: "OpenCode Bot"
+              
+            - name: GIT_AUTHOR_EMAIL
+              value: "opencode-bot@example.com"
+            
+            # Paths
+            - name: REPOS_FILE
+              value: "/config/repos.txt"
+            
+            # GitHub Token
+            - name: GITHUB_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: github-token
+                  key: GITHUB_TOKEN
+            
+            volumeMounts:
+            - name: repos-config
+              mountPath: /config
+              readOnly: true
+            
+            resources:
+              requests:
+                memory: "1Gi"
+                cpu: "1000m"
+              limits:
+                memory: "4Gi"
+                cpu: "4000m"
+          
+          volumes:
+          - name: repos-config
+            configMap:
+              name: opencode-repos

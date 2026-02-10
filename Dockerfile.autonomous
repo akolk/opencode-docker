@@ -1,0 +1,50 @@
+# Alternative Dockerfile using autonomous improvement mode
+FROM node:20-slim
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git \
+    curl \
+    ca-certificates \
+    jq \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN ARCH=$(uname -m) && \
+    case $ARCH in \
+        x86_64) GH_ARCH="amd64" ;; \
+        aarch64) GH_ARCH="arm64" ;; \
+        *) echo "Unsupported architecture: $ARCH" && exit 1 ;; \
+    esac && \
+    curl -fsSL "https://github.com/cli/cli/releases/download/v2.63.2/gh_2.63.2_linux_${GH_ARCH}.tar.gz" | \
+    tar -xz -C /tmp && \
+    cp /tmp/gh_2.63.2_linux_${GH_ARCH}/bin/gh /usr/local/bin/ && \
+    rm -rf /tmp/gh_2.63.2_linux_*
+
+RUN useradd -m -s /bin/bash opencode
+
+RUN curl -fsSL https://opencode.ai/install | bash && \
+    mv /root/.opencode /home/opencode/ && \
+    chown -R opencode:opencode /home/opencode/.opencode
+
+ENV PATH="/home/opencode/.opencode/bin:${PATH}"
+ENV HOME=/home/opencode
+ENV OLLAMA_HOST=${OLLAMA_HOST:-http://localhost:11434}
+ENV OLLAMA_MODEL=${OLLAMA_MODEL:-codellama:7b-code}
+ENV BRANCH_WORK=${BRANCH_WORK:-develop}
+ENV BRANCH_MAIN=${BRANCH_MAIN:-main}
+ENV AUTO_MERGE=${AUTO_MERGE:-true}
+
+USER opencode
+WORKDIR /home/opencode
+
+COPY --chown=opencode:opencode opencode.json /home/opencode/.config/opencode/opencode.json
+COPY --chown=opencode:opencode entrypoint-autonomous.sh /home/opencode/entrypoint.sh
+
+RUN chmod +x /home/opencode/entrypoint.sh
+
+RUN mkdir -p /home/opencode/workspace/repos
+
+WORKDIR /home/opencode/workspace
+
+ENTRYPOINT ["/home/opencode/entrypoint.sh"]

@@ -1,0 +1,62 @@
+name: Tests
+
+on:
+  push:
+    branches:
+      - develop
+      - main
+  pull_request:
+    branches:
+      - main
+      - develop
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup (Node.js example)
+        if: ${{ hashFiles('package.json') != '' }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies (Node.js)
+        if: ${{ hashFiles('package.json') != '' }}
+        run: npm ci
+      
+      - name: Run tests (Node.js)
+        if: ${{ hashFiles('package.json') != '' }}
+        run: npm test
+      
+      - name: Setup (Python example)
+        if: ${{ hashFiles('pyproject.toml') != '' || hashFiles('requirements.txt') != '' }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies (Python)
+        if: ${{ hashFiles('pyproject.toml') != '' || hashFiles('requirements.txt') != '' }}
+        run: |
+          pip install -e .
+          pip install pytest
+      
+      - name: Run tests (Python)
+        if: ${{ hashFiles('pyproject.toml') != '' || hashFiles('requirements.txt') != '' }}
+        run: pytest
+      
+      - name: Setup (Rust example)
+        if: ${{ hashFiles('Cargo.toml') != '' }}
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+      
+      - name: Run tests (Rust)
+        if: ${{ hashFiles('Cargo.toml') != '' }}
+        run: cargo test
+      
+      # Add more language-specific test steps as needed

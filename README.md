@@ -11,6 +11,47 @@ A Dockerized solution that runs OpenCode to analyze GitHub repositories and auto
 - **Configurable Models**: Easy to switch between Ollama models
 - **GitHub Integration**: Uses GitHub CLI for PR creation
 - **Persistent Output**: Logs and backups stored in PersistentVolume
+- **Two Operating Modes**:
+  - **AGENTS.md Mode**: One-time analysis generating documentation
+  - **Autonomous Improvement Mode**: Continuous AI-driven code improvements with Git branching
+
+## Operating Modes
+
+### Mode 1: AGENTS.md Generation (Original)
+Analyzes repositories and creates AGENTS.md files with coding guidelines.
+
+**Use Case**: Initial setup, documentation generation
+
+**Workflow**:
+```
+Clone repo → Analyze → Generate AGENTS.md → Create PR → Done
+```
+
+**Docker Image**: `ghcr.io/akolk/opencode-docker:latest`
+
+### Mode 2: Autonomous Improvement (New)
+AI continuously improves your codebase using Git branches and state tracking.
+
+**Use Case**: Ongoing maintenance, refactoring, quality improvements
+
+**Workflow**:
+```
+main branch ← develop branch ← OpenCode commits
+                ↑
+         .opencode/STATE.md
+         (tracks progress)
+```
+
+**Features**:
+- Works on `develop` branch (creates if missing)
+- Maintains state in `.opencode/` directory
+- Autonomously decides what to improve
+- Auto-merges to `main` when tests pass
+- Tracks all changes in `IMPROVEMENTS.md`
+
+**Docker Image**: `ghcr.io/akolk/opencode-docker:autonomous-latest`
+
+**Documentation**: See [docs/AUTONOMOUS_WORKFLOW.md](docs/AUTONOMOUS_WORKFLOW.md)
 
 ## Architecture
 
