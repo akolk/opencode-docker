@@ -347,17 +347,22 @@ EOFPROMPT
     
     # Run OpenCode with autonomous prompt
     log_info "Running OpenCode autonomous analysis (this may take 10-30 minutes)..."
-    
+
     # Create a wrapper script that feeds the prompt to opencode
     local analysis_output=".opencode/last_analysis_$(date +%Y%m%d_%H%M%S).log"
-    
-    if timeout 1800 bash -c "
-        echo '${prompt}' | opencode --stdin --task 'Analyze and improve this codebase autonomously'
-    " 2>&1 | tee "${analysis_output}"; then
+    local prompt_file="/tmp/opencode_prompt_$$.txt"
+
+    # Write prompt to file to avoid bash interpretation issues
+    echo "${prompt}" > "${prompt_file}"
+
+    if timeout 1800 opencode --task "$(cat ${prompt_file})" 2>&1 | tee "${analysis_output}"; then
         log_info "Autonomous improvement completed"
     else
         log_warn "OpenCode analysis completed with warnings or timeout"
     fi
+
+    # Clean up prompt file
+    rm -f "${prompt_file}"
     
     # Check if any files were modified
     if git diff --quiet && git diff --cached --quiet; then
