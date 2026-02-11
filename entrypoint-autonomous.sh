@@ -6,6 +6,10 @@ REPOS_FILE="${REPOS_FILE:-/config/repos.txt}"
 WORKSPACE_DIR="/home/opencode/workspace/repos"
 OLLAMA_HOST="${OLLAMA_HOST:-http://localhost:11434}"
 OLLAMA_MODEL="${OLLAMA_MODEL:-codellama:7b-code}"
+KIMI_HOST="${KIMI_HOST:-http://localhost:1337}"
+KIMI_MODEL="${KIMI_MODEL:-kimi-k2.5}"
+KIMI_API_KEY="${KIMI_API_KEY:-local}"
+MODEL_PROVIDER="${MODEL_PROVIDER:-ollama}"  # Options: ollama, kimi
 GIT_AUTHOR_NAME="${GIT_AUTHOR_NAME:-OpenCode Bot}"
 GIT_AUTHOR_EMAIL="${GIT_AUTHOR_EMAIL:-opencode-bot@example.com}"
 AUTO_MERGE="${AUTO_MERGE:-true}"
@@ -23,6 +27,28 @@ log_info() { echo -e "${GREEN}[INFO]${NC} $1"; }
 log_warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
 log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 log_debug() { echo -e "${BLUE}[DEBUG]${NC} $1"; }
+
+# Configure model provider
+configure_model() {
+    log_info "Configuring model provider: ${MODEL_PROVIDER}"
+
+    case "${MODEL_PROVIDER}" in
+        "ollama")
+            export OPENCODE_PROVIDER="ollama"
+            export OPENCODE_MODEL="${OLLAMA_MODEL}"
+            log_info "Using Ollama: ${OLLAMA_HOST} with model ${OLLAMA_MODEL}"
+            ;;
+        "kimi")
+            export OPENCODE_PROVIDER="kimi"
+            export OPENCODE_MODEL="${KIMI_MODEL}"
+            log_info "Using Kimi-K2: ${KIMI_HOST} with model ${KIMI_MODEL}"
+            ;;
+        *)
+            log_error "Unknown model provider: ${MODEL_PROVIDER}. Use 'ollama' or 'kimi'"
+            exit 1
+            ;;
+    esac
+}
 
 check_requirements() {
     log_info "Checking requirements..."
@@ -482,12 +508,22 @@ main() {
     log_info "OpenCode Autonomous Improvement Bot"
     log_info "========================================="
     log_info "Mode: AI-Driven Continuous Improvement"
+    log_info "Model Provider: ${MODEL_PROVIDER}"
+    if [[ "${MODEL_PROVIDER}" == "ollama" ]]; then
+        log_info "Ollama Host: ${OLLAMA_HOST}"
+        log_info "Model: ${OLLAMA_MODEL}"
+    elif [[ "${MODEL_PROVIDER}" == "kimi" ]]; then
+        log_info "Kimi Host: ${KIMI_HOST}"
+        log_info "Model: ${KIMI_MODEL}"
+    fi
     log_info "Work Branch: ${BRANCH_WORK}"
     log_info "Main Branch: ${BRANCH_MAIN}"
     log_info "Auto-merge: ${AUTO_MERGE}"
-    log_info "Model: ${OLLAMA_MODEL}"
     log_info "========================================="
-    
+
+    # Configure model provider
+    configure_model
+
     check_requirements
     
     mkdir -p "${WORKSPACE_DIR}"

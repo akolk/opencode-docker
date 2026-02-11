@@ -209,11 +209,19 @@ View all runs: [Actions Tab](https://github.com/akolk/opencode-docker/actions)
 
 | Variable | Description | Default |
 |----------|-------------|---------|
+| `MODEL_PROVIDER` | AI provider: `ollama` or `kimi` | `ollama` |
+| **Ollama Settings** | | |
 | `OLLAMA_HOST` | Ollama server URL | `http://localhost:11434` |
-| `OLLAMA_MODEL` | Model to use | `codellama:7b-code` |
+| `OLLAMA_MODEL` | Ollama model name | `codellama:7b-code` |
+| **Kimi Settings** | | |
+| `KIMI_HOST` | Kimi-K2 endpoint URL | `http://localhost:1337` |
+| `KIMI_MODEL` | Kimi model name | `kimi-k2.5` |
+| `KIMI_API_KEY` | API key (if required) | `local` |
+| **GitHub Settings** | | |
 | `GITHUB_TOKEN` | GitHub PAT (required) | - |
 | `GIT_AUTHOR_NAME` | Git commit author name | `OpenCode Bot` |
 | `GIT_AUTHOR_EMAIL` | Git commit author email | `opencode-bot@example.com` |
+| **Paths** | | |
 | `REPOS_FILE` | Path to repo list | `/config/repos.txt` |
 | `OUTPUT_DIR` | Output directory | `/output` |
 
@@ -231,6 +239,96 @@ Then apply the change:
 ```bash
 kubectl apply -f k8s/cronjob.yaml
 ```
+
+### Model Provider Selection
+
+OpenCode Analyzer supports multiple AI model providers. You can switch between **Ollama** (self-hosted) and **Kimi-K2** (built-in or hosted).
+
+#### Supported Providers
+
+| Provider | Type | Configuration | Best For |
+|----------|------|--------------|----------|
+| **Ollama** | Self-hosted | Requires Ollama server | Full control, privacy, local development |
+| **Kimi-K2** | Built-in/Hosted | Uses Kimi-K2 model directly | Convenience, no infrastructure |
+
+#### Switching to Kimi-K2
+
+To use Kimi-K2 instead of Ollama:
+
+```yaml
+# In k8s/cronjob.yaml or k8s/cronjob-autonomous.yaml
+
+# Set the provider
+- name: MODEL_PROVIDER
+  value: "kimi"
+
+# Configure Kimi (optional - uses defaults if not set)
+- name: KIMI_HOST
+  value: "http://kimi.your-domain.com:1337"  # Or localhost:1337
+  
+- name: KIMI_MODEL
+  value: "kimi-k2.5"  # Or your specific model version
+
+# Optional API key (if required by your Kimi setup)
+- name: KIMI_API_KEY
+  value: "your-api-key"
+```
+
+Then apply:
+```bash
+kubectl apply -f k8s/cronjob.yaml
+```
+
+#### Environment Variables by Provider
+
+**Ollama Mode** (`MODEL_PROVIDER=ollama`):
+```yaml
+- name: OLLAMA_HOST
+  value: "http://ollama.your-domain.com:11434"
+- name: OLLAMA_MODEL
+  value: "codellama:7b-code"
+  # Other options: "llama3:8b", "codellama:13b-code", "mistral:7b"
+```
+
+**Kimi Mode** (`MODEL_PROVIDER=kimi`):
+```yaml
+- name: KIMI_HOST
+  value: "http://localhost:1337"  # Default Kimi endpoint
+- name: KIMI_MODEL
+  value: "kimi-k2.5"  # Default model
+- name: KIMI_API_KEY
+  value: "local"  # Or your API key
+```
+
+#### Quick Provider Switch
+
+**Option 1: Environment Variable**
+```bash
+# Deploy with Kimi
+kubectl set env cronjob/opencode-analyzer MODEL_PROVIDER=kimi -n opencode-analyzer
+
+# Switch back to Ollama
+kubectl set env cronjob/opencode-analyzer MODEL_PROVIDER=ollama -n opencode-analyzer
+```
+
+**Option 2: Edit Config**
+```bash
+# Edit the cronjob
+kubectl edit cronjob opencode-analyzer -n opencode-analyzer
+
+# Change MODEL_PROVIDER value and save
+```
+
+#### Provider Comparison
+
+| Feature | Ollama | Kimi-K2 |
+|---------|--------|---------|
+| **Setup** | Requires Ollama server | Built-in or simple endpoint |
+| **Privacy** | Fully private (local) | Depends on hosting |
+| **Model Options** | Many (Llama, Mistral, etc.) | Kimi-K2 family |
+| **Speed** | Depends on hardware | Optimized for performance |
+| **Cost** | Free (your hardware) | Depends on usage |
+| **Offline** | Yes | No (needs endpoint) |
 
 ## Makefile Commands
 

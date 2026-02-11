@@ -33,7 +33,12 @@ spec:
             imagePullPolicy: Always
             
             env:
-            # Ollama configuration
+            # Model Provider Configuration
+            # Options: "ollama" or "kimi"
+            - name: MODEL_PROVIDER
+              value: "ollama"
+            
+            # Ollama configuration (used when MODEL_PROVIDER=ollama)
             - name: OLLAMA_HOST
               value: "http://your-ollama-server:11434"
               
@@ -43,6 +48,16 @@ spec:
               # value: "llama3:8b"
               # value: "codellama:13b-code"
               # value: "mistral:7b"
+            
+            # Kimi-K2 configuration (used when MODEL_PROVIDER=kimi)
+            # - name: KIMI_HOST
+            #   value: "http://kimi.your-domain.com:1337"  # Change to your Kimi endpoint
+            #   
+            # - name: KIMI_MODEL
+            #   value: "kimi-k2.5"
+            #
+            # - name: KIMI_API_KEY
+            #   value: "your-api-key"  # Optional: API key for Kimi
             
             # Branch configuration
             - name: BRANCH_WORK
