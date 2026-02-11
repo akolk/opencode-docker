@@ -10,11 +10,19 @@ ZEN_HOST="${ZEN_HOST:-https://opencode.ai/api/zen/v1}"
 ZEN_MODEL="${ZEN_MODEL:-kimi-k2.5-free}"
 ZEN_API_KEY="${ZEN_API_KEY:-local}"
 MODEL_PROVIDER="${MODEL_PROVIDER:-ollama}"  # Options: ollama, zen
+
+# Git Provider Configuration
+GIT_PROVIDER="${GIT_PROVIDER:-auto}"  # Options: github, gitea, auto
+GITEA_HOST="${GITEA_HOST:-}"  # Gitea server URL (e.g., https://gitea.example.com)
+GITEA_TOKEN="${GITEA_TOKEN:-}"  # Gitea access token
+
 GIT_AUTHOR_NAME="${GIT_AUTHOR_NAME:-OpenCode Bot}"
 GIT_AUTHOR_EMAIL="${GIT_AUTHOR_EMAIL:-opencode-bot@example.com}"
 AUTO_MERGE="${AUTO_MERGE:-true}"
-BRANCH_WORK="${BRANCH_WORK:-develop}"
 BRANCH_MAIN="${BRANCH_MAIN:-main}"
+
+# Detected git provider (set by detect_git_provider)
+DETECTED_GIT_PROVIDER=""
 
 # Colors for output
 RED='\033[0;31m'
@@ -27,6 +35,69 @@ log_info() { echo -e "${GREEN}[INFO]${NC} $1"; }
 log_warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
 log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 log_debug() { echo -e "${BLUE}[DEBUG]${NC} $1"; }
+
+# Detect git provider from repo string
+# Supports formats:
+# - github.com/owner/repo -> github
+# - gitea.example.com/owner/repo -> gitea
+# - https://github.com/owner/repo -> github
+# - https://gitea.example.com/owner/repo -> gitea
+detect_git_provider() {
+    local repo=$1
+    
+    if [[ "${GIT_PROVIDER}" != "auto" ]]; then
+        # User explicitly set the provider
+        DETECTED_GIT_PROVIDER="${GIT_PROVIDER}"
+        return
+    fi
+    
+    # Check if it's a full URL
+    if [[ "${repo}" =~ ^https?:// ]]; then
+        if [[ "${repo}" =~ github.com ]]; then
+            DETECTED_GIT_PROVIDER="github"
+        elif [[ "${repo}" =~ ${GITEA_HOST} ]] || [[ "${repo}" =~ ^https?://[^/]+\. ]]; then
+            # Assume Gitea for non-github URLs if GITEA_HOST is set
+            DETECTED_GIT_PROVIDER="gitea"
+        fi
+    else
+        # Simple owner/repo format - assume GitHub by default
+        # unless GITEA_HOST is set and explicitly configured
+        if [[ -n "${GITEA_HOST}" ]] && [[ "${repo}" =~ ^gitea/ ]]; then
+            DETECTED_GIT_PROVIDER="gitea"
+        else
+            DETECTED_GIT_PROVIDER="github"
+        fi
+    fi
+    
+    log_info "Detected git provider: ${DETECTED_GIT_PROVIDER} for ${repo}"
+}
+
+# Get git clone URL for a repo
+get_clone_url() {
+    local repo=$1
+    local provider=$2
+    
+    # If it's already a full URL, return as-is
+    if [[ "${repo}" =~ ^https?:// ]]; then
+        echo "${repo}"
+        return
+    fi
+    
+    case "${provider}" in
+        "github")
+            echo "https://${GITHUB_TOKEN}@github.com/${repo}.git"
+            ;;
+        "gitea")
+            local gitea_host="${GITEA_HOST:-https://gitea.example.com}"
+            # Remove trailing slash
+            gitea_host="${gitea_host%/}"
+            echo "${gitea_host}/${repo}.git"
+            ;;
+        *)
+            echo "https://github.com/${repo}.git"
+            ;;
+    esac
+}
 
 # Configure model provider
 configure_model() {
@@ -68,6 +139,21 @@ check_requirements() {
     git config --global user.name "${GIT_AUTHOR_NAME}"
     git config --global user.email "${GIT_AUTHOR_EMAIL}"
     git config --global init.defaultBranch main
+    
+    # Authenticate with GitHub CLI (always do this for mixed environments)
+    echo "${GITHUB_TOKEN}" | gh auth login --with-token
+    log_info "Authenticated with GitHub CLI"
+    
+    # Authenticate with Gitea CLI if Gitea is configured
+    if [[ -n "${GITEA_HOST}" ]] && [[ -n "${GITEA_TOKEN}" ]]; then
+        log_info "Configuring Gitea CLI..."
+        tea login add \
+            --name "default" \
+            --url "${GITEA_HOST}" \
+            --token "${GITEA_TOKEN}" \
+            --default
+        log_info "Authenticated with Gitea: ${GITEA_HOST}"
+    fi
     
     log_info "Requirements check passed"
 }
@@ -378,6 +464,7 @@ Requires human review." || true
 # Create PR and optionally auto-merge
 create_pr_and_merge() {
     local repo=$1
+    local provider="${2:-${DETECTED_GIT_PROVIDER}}"
     local timestamp=$(date +%Y%m%d-%H%M%S)
     local pr_title="auto: Autonomous improvements from develop"
     local pr_body="## Automated Improvement Summary
@@ -401,50 +488,94 @@ See commits for detailed changes.
 - [ ] Approve if satisfactory
 
 ### Model Used
-- **Model**: ${OLLAMA_MODEL}
+- **Model**: ${ZEN_MODEL:-${OLLAMA_MODEL}}
 - **Timestamp**: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
 
 ---
 
 *This is an automated PR created by OpenCode Improvement Bot.*"
     
-    log_info "Creating PR from ${BRANCH_WORK} to ${BRANCH_MAIN}..."
+    log_info "Creating PR from ${BRANCH_WORK} to ${BRANCH_MAIN} on ${provider}..."
     
-    # Check if PR already exists
-    existing_pr=$(gh pr list --repo "${repo}" --head "${BRANCH_WORK}" --base "${BRANCH_MAIN}" --json number --jq '.[0].number' 2>/dev/null || echo "")
+    local pr_url=""
     
-    if [[ -n "${existing_pr}" ]]; then
-        log_info "PR #${existing_pr} already exists"
-        pr_url="https://github.com/${repo}/pull/${existing_pr}"
-    else
-        # Create new PR
-        pr_url=$(gh pr create \
-            --repo "${repo}" \
-            --title "${pr_title}" \
-            --body "${pr_body}" \
-            --head "${BRANCH_WORK}" \
-            --base "${BRANCH_MAIN}" 2>&1)
-        
-        if [[ $? -ne 0 ]]; then
-            log_error "Failed to create PR: ${pr_url}"
-            return 1
+    if [[ "${provider}" == "gitea" ]]; then
+        # Extract owner/repo from full URL or simple format
+        local repo_path="${repo}"
+        if [[ "${repo}" =~ ^https?:// ]]; then
+            # Remove protocol and host
+            repo_path=$(echo "${repo}" | sed 's|https\?://[^/]*/||')
         fi
         
-        log_info "Created PR: ${pr_url}"
-    fi
-    
-    # Auto-merge if enabled
-    if [[ "${AUTO_MERGE}" == "true" ]]; then
-        log_info "Auto-merge enabled - attempting to merge..."
+        # Check if PR already exists
+        local existing_pr
+        existing_pr=$(tea pr list --repo "${repo_path}" --head "${BRANCH_WORK}" 2>/dev/null | grep -o '[0-9]\+' | head -1 || echo "")
         
-        # Wait a moment for tests to start
-        sleep 10
-        
-        # Try to enable auto-merge
-        if gh pr merge "${pr_url}" --auto --squash 2>&1; then
-            log_info "Auto-merge enabled for PR"
+        if [[ -n "${existing_pr}" ]]; then
+            log_info "PR #${existing_pr} already exists"
+            local gitea_host="${GITEA_HOST:-https://gitea.example.com}"
+            gitea_host="${gitea_host%/}"
+            pr_url="${gitea_host}/${repo_path}/pulls/${existing_pr}"
         else
-            log_warn "Could not enable auto-merge - may need manual review or tests still running"
+            # Create new PR using tea
+            pr_url=$(tea pr create \
+                --repo "${repo_path}" \
+                --title "${pr_title}" \
+                --body "${pr_body}" \
+                --head "${BRANCH_WORK}" \
+                --base "${BRANCH_MAIN}" 2>&1)
+            
+            if [[ $? -ne 0 ]]; then
+                log_error "Failed to create PR: ${pr_url}"
+                return 1
+            fi
+            
+            log_info "Created PR: ${pr_url}"
+        fi
+        
+        # Note: Auto-merge for Gitea is not implemented (Gitea doesn't have auto-merge feature like GitHub)
+        if [[ "${AUTO_MERGE}" == "true" ]]; then
+            log_warn "Auto-merge not available for Gitea - manual merge required"
+        fi
+    else
+        # GitHub PR creation using gh CLI
+        # Check if PR already exists
+        local existing_pr
+        existing_pr=$(gh pr list --repo "${repo}" --head "${BRANCH_WORK}" --base "${BRANCH_MAIN}" --json number --jq '.[0].number' 2>/dev/null || echo "")
+        
+        if [[ -n "${existing_pr}" ]]; then
+            log_info "PR #${existing_pr} already exists"
+            pr_url="https://github.com/${repo}/pull/${existing_pr}"
+        else
+            # Create new PR
+            pr_url=$(gh pr create \
+                --repo "${repo}" \
+                --title "${pr_title}" \
+                --body "${pr_body}" \
+                --head "${BRANCH_WORK}" \
+                --base "${BRANCH_MAIN}" 2>&1)
+            
+            if [[ $? -ne 0 ]]; then
+                log_error "Failed to create PR: ${pr_url}"
+                return 1
+            fi
+            
+            log_info "Created PR: ${pr_url}"
+        fi
+        
+        # Auto-merge if enabled
+        if [[ "${AUTO_MERGE}" == "true" ]]; then
+            log_info "Auto-merge enabled - attempting to merge..."
+            
+            # Wait a moment for tests to start
+            sleep 10
+            
+            # Try to enable auto-merge
+            if gh pr merge "${pr_url}" --auto --squash 2>&1; then
+                log_info "Auto-merge enabled for PR"
+            else
+                log_warn "Could not enable auto-merge - may need manual review or tests still running"
+            fi
         fi
     fi
     
@@ -454,10 +585,15 @@ See commits for detailed changes.
 # Process a single repository
 process_repo() {
     local repo=$1
-    local repo_dir="${WORKSPACE_DIR}/$(echo ${repo} | tr '/' '_')_${BRANCH_WORK}"
+    local repo_dir="${WORKSPACE_DIR}/$(echo ${repo} | tr '/' '_' | sed 's/https\?://g; s/\//_/g' | sed 's/^_//')_${BRANCH_WORK}"
+    
+    # Detect git provider
+    detect_git_provider "${repo}"
+    local provider="${DETECTED_GIT_PROVIDER}"
     
     log_info "========================================="
     log_info "Processing: ${repo}"
+    log_info "Git Provider: ${provider}"
     log_info "========================================="
     
     # Cleanup previous clone
@@ -465,9 +601,12 @@ process_repo() {
         rm -rf "${repo_dir}"
     fi
     
+    # Get clone URL based on provider
+    local clone_url=$(get_clone_url "${repo}" "${provider}")
+    
     # Clone repository
-    log_info "Cloning ${repo}..."
-    if ! git clone "https://${GITHUB_TOKEN}@github.com/${repo}.git" "${repo_dir}" 2>&1 | tail -5; then
+    log_info "Cloning ${repo} from ${provider}..."
+    if ! git clone "${clone_url}" "${repo_dir}" 2>&1 | tail -5; then
         log_error "Failed to clone ${repo}"
         return 1
     fi
@@ -478,10 +617,13 @@ process_repo() {
     setup_develop_branch "${repo}" "${repo_dir}"
     
     # Check for human input via issues
-    if check_github_issues "${repo}"; then
-        log_warn "Priority issues found - addressing those first"
-        # TODO: Implement issue-based improvement
-        # For now, continue with autonomous mode
+    if [[ "${provider}" == "gitea" ]]; then
+        log_info "Checking Gitea issues (not yet implemented)"
+        # TODO: Implement Gitea issue checking
+    else
+        if check_github_issues "${repo}"; then
+            log_warn "Priority issues found - addressing those first"
+        fi
     fi
     
     # Run autonomous improvement
@@ -489,7 +631,7 @@ process_repo() {
         log_info "Improvement successful"
         
         # Create PR to main
-        create_pr_and_merge "${repo}"
+        create_pr_and_merge "${repo}" "${provider}"
     else
         log_error "Improvement failed for ${repo}"
         return 1

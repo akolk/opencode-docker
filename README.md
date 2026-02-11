@@ -1,15 +1,16 @@
-# OpenCode GitHub Repo Analyzer
+# OpenCode GitHub/Gitea Repo Analyzer
 
-A Dockerized solution that runs OpenCode to analyze GitHub repositories and automatically creates AGENTS.md files via Pull Requests. Designed to run on K3s with external Ollama integration.
+A Dockerized solution that runs OpenCode to analyze GitHub **and Gitea** repositories and automatically creates AGENTS.md files via Pull Requests. Designed to run on K3s with external Ollama integration.
 
 ## Features
 
 - **Multi-Architecture Support**: Works on both AMD64 and ARM64 (Raspberry Pi, Apple Silicon, AWS Graviton)
 - **K3s Native**: Designed for Kubernetes CronJob scheduling
 - **Automated PR Creation**: Creates branches and PRs with AGENTS.md files
+- **Dual Git Provider Support**: Works with both **GitHub** and **Gitea** repositories
 - **External Ollama**: Connects to your existing Ollama instance
 - **Configurable Models**: Easy to switch between Ollama models
-- **GitHub Integration**: Uses GitHub CLI for PR creation
+- **GitHub/Gitea Integration**: Uses GitHub CLI (gh) and Gitea CLI (tea) for PR creation
 - **Persistent Output**: Logs and backups stored in PersistentVolume
 - **Two Operating Modes**:
   - **AGENTS.md Mode**: One-time analysis generating documentation
@@ -370,6 +371,128 @@ make k8s-status
 # Remove from cluster
 make k8s-delete
 ```
+
+## Git Provider Support
+
+OpenCode Analyzer supports both **GitHub** and **Gitea** repositories with automatic detection.
+
+### Supported Git Providers
+
+| Provider | Detection | Authentication | PR Creation |
+|----------|-----------|----------------|-------------|
+| **GitHub** | Auto-detected from URL | `GITHUB_TOKEN` | GitHub CLI (`gh`) |
+| **Gitea** | Auto-detected from URL or explicit config | `GITEA_TOKEN` | Gitea CLI (`tea`) |
+
+### Repository URL Formats
+
+**GitHub** (default):
+```text
+# Simple format
+owner/repo
+
+# Full URL
+https://github.com/owner/repo
+```
+
+**Gitea**:
+```text
+# With GITEA_HOST set to https://gitea.example.com:
+owner/repo
+
+# Full URL
+https://gitea.example.com/owner/repo
+```
+
+### Git Provider Configuration
+
+#### Option 1: Automatic Detection (Default)
+```yaml
+# Automatically detects provider from repo URL
+- name: GIT_PROVIDER
+  value: "auto"
+```
+
+#### Option 2: Explicit Provider Setting
+```yaml
+# Force GitHub (even for non-github.com URLs)
+- name: GIT_PROVIDER
+  value: "github"
+
+# Force Gitea
+- name: GIT_PROVIDER
+  value: "gitea"
+- name: GITEA_HOST
+  value: "https://gitea.example.com"
+```
+
+### Setting Up Gitea Support
+
+1. **Create Gitea Token Secret**:
+```bash
+# Edit k8s/secret-gitea-token.yaml
+stringData:
+  GITEA_TOKEN: "your-gitea-access-token"
+
+# Apply the secret
+kubectl apply -f k8s/secret-gitea-token.yaml
+```
+
+2. **Configure CronJob for Gitea**:
+```yaml
+# In k8s/cronjob.yaml or k8s/cronjob-autonomous.yaml
+- name: GIT_PROVIDER
+  value: "auto"  # or "gitea" for explicit
+
+- name: GITEA_HOST
+  value: "https://gitea.example.com"
+
+- name: GITEA_TOKEN
+  valueFrom:
+    secretKeyRef:
+      name: gitea-token
+      key: GITEA_TOKEN
+```
+
+3. **Add Gitea Repositories**:
+```yaml
+# k8s/configmap-repos.yaml
+data:
+  repos.txt: |
+    # GitHub repos (auto-detected)
+    github.com/owner/repo1
+    owner/repo2
+    
+    # Gitea repos (auto-detected via URL)
+    https://gitea.example.com/owner/repo3
+    
+    # Or if GITEA_HOST is set:
+    owner/repo4
+```
+
+### Mixed Git Providers
+
+You can process both GitHub and Gitea repositories in the same run:
+
+```yaml
+data:
+  repos.txt: |
+    # These will use GitHub (auto-detected)
+    facebook/react
+    kubernetes/kubernetes
+    
+    # These will use Gitea (auto-detected via full URL)
+    https://gitea.example.com/myorg/repo1
+    https://gitea.example.com/myorg/repo2
+```
+
+### Provider Limitations
+
+| Feature | GitHub | Gitea |
+|---------|--------|-------|
+| **Auto-merge** | ✅ Supported | ❌ Not available |
+| **Issue checking** | ✅ Supported | ⚠️ Basic support |
+| **PR creation** | ✅ Full support | ✅ Full support |
+| **Private repos** | ✅ Supported | ✅ Supported |
 
 ## Repository List Format
 

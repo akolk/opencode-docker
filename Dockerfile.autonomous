@@ -21,6 +21,16 @@ RUN ARCH=$(uname -m) && \
     cp /tmp/gh_2.63.2_linux_${GH_ARCH}/bin/gh /usr/local/bin/ && \
     rm -rf /tmp/gh_2.63.2_linux_*
 
+# Install Gitea CLI (tea) for Gitea support
+RUN ARCH=$(uname -m) && \
+    case $ARCH in \
+        x86_64) TEA_ARCH="amd64" ;; \
+        aarch64) TEA_ARCH="arm64" ;; \
+        *) echo "Unsupported architecture: $ARCH" && exit 1 ;; \
+    esac && \
+    curl -fsSL "https://dl.gitea.com/tea/latest/tea-latest-linux-${TEA_ARCH}" -o /usr/local/bin/tea && \
+    chmod +x /usr/local/bin/tea
+
 RUN useradd -m -s /bin/bash opencode
 
 RUN curl -fsSL https://opencode.ai/install | bash && \

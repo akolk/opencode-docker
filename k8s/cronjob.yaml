@@ -81,6 +81,22 @@ spec:
             - name: OUTPUT_DIR
               value: "/output"
             
+            # Git Provider Configuration
+            # Options: "github", "gitea", "auto" (auto-detect)
+            - name: GIT_PROVIDER
+              value: "auto"
+            
+            # Gitea Configuration (when using Gitea repos)
+            # Uncomment and set these for Gitea support
+            # - name: GITEA_HOST
+            #   value: "https://gitea.example.com"
+            #
+            # - name: GITEA_TOKEN
+            #   valueFrom:
+            #     secretKeyRef:
+            #       name: gitea-token
+            #       key: GITEA_TOKEN
+            
             # GitHub Token from Secret
             - name: GITHUB_TOKEN
               valueFrom:
