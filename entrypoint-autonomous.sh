@@ -6,10 +6,10 @@ REPOS_FILE="${REPOS_FILE:-/config/repos.txt}"
 WORKSPACE_DIR="/home/opencode/workspace/repos"
 OLLAMA_HOST="${OLLAMA_HOST:-http://localhost:11434}"
 OLLAMA_MODEL="${OLLAMA_MODEL:-codellama:7b-code}"
-KIMI_HOST="${KIMI_HOST:-http://localhost:1337}"
-KIMI_MODEL="${KIMI_MODEL:-kimi-k2.5}"
-KIMI_API_KEY="${KIMI_API_KEY:-local}"
-MODEL_PROVIDER="${MODEL_PROVIDER:-ollama}"  # Options: ollama, kimi
+ZEN_HOST="${ZEN_HOST:-https://opencode.ai/api/zen/v1}"
+ZEN_MODEL="${ZEN_MODEL:-kimi-k2.5-free}"
+ZEN_API_KEY="${ZEN_API_KEY:-local}"
+MODEL_PROVIDER="${MODEL_PROVIDER:-ollama}"  # Options: ollama, zen
 GIT_AUTHOR_NAME="${GIT_AUTHOR_NAME:-OpenCode Bot}"
 GIT_AUTHOR_EMAIL="${GIT_AUTHOR_EMAIL:-opencode-bot@example.com}"
 AUTO_MERGE="${AUTO_MERGE:-true}"
@@ -38,13 +38,14 @@ configure_model() {
             export OPENCODE_MODEL="${OLLAMA_MODEL}"
             log_info "Using Ollama: ${OLLAMA_HOST} with model ${OLLAMA_MODEL}"
             ;;
-        "kimi")
-            export OPENCODE_PROVIDER="kimi"
-            export OPENCODE_MODEL="${KIMI_MODEL}"
-            log_info "Using Kimi-K2: ${KIMI_HOST} with model ${KIMI_MODEL}"
+        "zen")
+            export OPENCODE_PROVIDER="zen"
+            export OPENCODE_MODEL="${ZEN_MODEL}"
+            log_info "Using OpenCode Zen: ${ZEN_HOST} with model ${ZEN_MODEL}"
+            log_info "Available Zen models: kimi-k2.5-free, minimax-m2-free"
             ;;
         *)
-            log_error "Unknown model provider: ${MODEL_PROVIDER}. Use 'ollama' or 'kimi'"
+            log_error "Unknown model provider: ${MODEL_PROVIDER}. Use 'ollama' or 'zen'"
             exit 1
             ;;
     esac
@@ -512,9 +513,10 @@ main() {
     if [[ "${MODEL_PROVIDER}" == "ollama" ]]; then
         log_info "Ollama Host: ${OLLAMA_HOST}"
         log_info "Model: ${OLLAMA_MODEL}"
-    elif [[ "${MODEL_PROVIDER}" == "kimi" ]]; then
-        log_info "Kimi Host: ${KIMI_HOST}"
-        log_info "Model: ${KIMI_MODEL}"
+    elif [[ "${MODEL_PROVIDER}" == "zen" ]]; then
+        log_info "Zen Host: ${ZEN_HOST}"
+        log_info "Model: ${ZEN_MODEL}"
+        log_info "Available models: kimi-k2.5-free, minimax-m2-free"
     fi
     log_info "Work Branch: ${BRANCH_WORK}"
     log_info "Main Branch: ${BRANCH_MAIN}"

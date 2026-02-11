@@ -14,16 +14,16 @@
         }
       }
     },
-    "kimi": {
+    "zen": {
       "npm": "@ai-sdk/openai-compatible",
-      "name": "Kimi-K2",
+      "name": "OpenCode Zen",
       "options": {
-        "baseURL": "${KIMI_HOST:-http://localhost:1337}/v1",
-        "apiKey": "${KIMI_API_KEY:-local}"
+        "baseURL": "${ZEN_HOST:-https://opencode.ai/api/zen/v1}",
+        "apiKey": "${ZEN_API_KEY:-local}"
       },
       "models": {
-        "${KIMI_MODEL:-kimi-k2.5}": {
-          "name": "${KIMI_MODEL:-kimi-k2.5}"
+        "${ZEN_MODEL:-kimi-k2.5-free}": {
+          "name": "${ZEN_MODEL:-kimi-k2.5-free}"
         }
       }
     }

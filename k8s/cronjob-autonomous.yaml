@@ -34,7 +34,7 @@ spec:
             
             env:
             # Model Provider Configuration
-            # Options: "ollama" or "kimi"
+            # Options: "ollama" or "zen"
             - name: MODEL_PROVIDER
               value: "ollama"
             
@@ -49,15 +49,19 @@ spec:
               # value: "codellama:13b-code"
               # value: "mistral:7b"
             
-            # Kimi-K2 configuration (used when MODEL_PROVIDER=kimi)
-            # - name: KIMI_HOST
-            #   value: "http://kimi.your-domain.com:1337"  # Change to your Kimi endpoint
+            # OpenCode Zen configuration (used when MODEL_PROVIDER=zen)
+            # Zen provides free models including:
+            # - "kimi-k2.5-free" (Kimi K2.5 Free)
+            # - "minimax-m2-free" (MiniMax M2 Free)
+            # - name: ZEN_HOST
+            #   value: "https://opencode.ai/api/zen/v1"
             #   
-            # - name: KIMI_MODEL
-            #   value: "kimi-k2.5"
+            # - name: ZEN_MODEL
+            #   value: "kimi-k2.5-free"
+            #   # Other options: "minimax-m2-free"
             #
-            # - name: KIMI_API_KEY
-            #   value: "your-api-key"  # Optional: API key for Kimi
+            # - name: ZEN_API_KEY
+            #   value: "your-api-key"  # Optional
             
             # Branch configuration
             - name: BRANCH_WORK

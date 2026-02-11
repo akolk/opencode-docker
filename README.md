@@ -242,35 +242,44 @@ kubectl apply -f k8s/cronjob.yaml
 
 ### Model Provider Selection
 
-OpenCode Analyzer supports multiple AI model providers. You can switch between **Ollama** (self-hosted) and **Kimi-K2** (built-in or hosted).
+OpenCode Analyzer supports multiple AI model providers. You can switch between **Ollama** (self-hosted) and **OpenCode Zen** (built-in free models).
 
 #### Supported Providers
 
 | Provider | Type | Configuration | Best For |
 |----------|------|--------------|----------|
 | **Ollama** | Self-hosted | Requires Ollama server | Full control, privacy, local development |
-| **Kimi-K2** | Built-in/Hosted | Uses Kimi-K2 model directly | Convenience, no infrastructure |
+| **OpenCode Zen** | Built-in | Free models via OpenCode | Zero setup, free tier |
 
-#### Switching to Kimi-K2
+#### OpenCode Zen Free Models
 
-To use Kimi-K2 instead of Ollama:
+OpenCode Zen provides access to free models:
+
+| Model | Description | Best For |
+|-------|-------------|----------|
+| **kimi-k2.5-free** | Kimi K2.5 Free | General coding, analysis |
+| **minimax-m2-free** | MiniMax M2 Free | Code generation, reasoning |
+
+#### Switching to OpenCode Zen
+
+To use OpenCode Zen instead of Ollama:
 
 ```yaml
 # In k8s/cronjob.yaml or k8s/cronjob-autonomous.yaml
 
 # Set the provider
 - name: MODEL_PROVIDER
-  value: "kimi"
+  value: "zen"
 
-# Configure Kimi (optional - uses defaults if not set)
-- name: KIMI_HOST
-  value: "http://kimi.your-domain.com:1337"  # Or localhost:1337
+# Configure Zen (optional - uses defaults if not set)
+- name: ZEN_HOST
+  value: "https://opencode.ai/api/zen/v1"  # Or your hosted endpoint
   
-- name: KIMI_MODEL
-  value: "kimi-k2.5"  # Or your specific model version
+- name: ZEN_MODEL
+  value: "kimi-k2.5-free"  # Or "minimax-m2-free"
 
-# Optional API key (if required by your Kimi setup)
-- name: KIMI_API_KEY
+# Optional API key (if required by your Zen setup)
+- name: ZEN_API_KEY
   value: "your-api-key"
 ```
 
@@ -290,13 +299,14 @@ kubectl apply -f k8s/cronjob.yaml
   # Other options: "llama3:8b", "codellama:13b-code", "mistral:7b"
 ```
 
-**Kimi Mode** (`MODEL_PROVIDER=kimi`):
+**Zen Mode** (`MODEL_PROVIDER=zen`):
 ```yaml
-- name: KIMI_HOST
-  value: "http://localhost:1337"  # Default Kimi endpoint
-- name: KIMI_MODEL
-  value: "kimi-k2.5"  # Default model
-- name: KIMI_API_KEY
+- name: ZEN_HOST
+  value: "https://opencode.ai/api/zen/v1"  # Default Zen endpoint
+- name: ZEN_MODEL
+  value: "kimi-k2.5-free"  # Default free model
+  # Other options: "minimax-m2-free"
+- name: ZEN_API_KEY
   value: "local"  # Or your API key
 ```
 
@@ -304,8 +314,8 @@ kubectl apply -f k8s/cronjob.yaml
 
 **Option 1: Environment Variable**
 ```bash
-# Deploy with Kimi
-kubectl set env cronjob/opencode-analyzer MODEL_PROVIDER=kimi -n opencode-analyzer
+# Deploy with Zen
+kubectl set env cronjob/opencode-analyzer MODEL_PROVIDER=zen -n opencode-analyzer
 
 # Switch back to Ollama
 kubectl set env cronjob/opencode-analyzer MODEL_PROVIDER=ollama -n opencode-analyzer
@@ -321,13 +331,13 @@ kubectl edit cronjob opencode-analyzer -n opencode-analyzer
 
 #### Provider Comparison
 
-| Feature | Ollama | Kimi-K2 |
-|---------|--------|---------|
-| **Setup** | Requires Ollama server | Built-in or simple endpoint |
-| **Privacy** | Fully private (local) | Depends on hosting |
-| **Model Options** | Many (Llama, Mistral, etc.) | Kimi-K2 family |
-| **Speed** | Depends on hardware | Optimized for performance |
-| **Cost** | Free (your hardware) | Depends on usage |
+| Feature | Ollama | OpenCode Zen |
+|---------|--------|--------------|
+| **Setup** | Requires Ollama server | Zero setup |
+| **Privacy** | Fully private (local) | Uses OpenCode service |
+| **Model Options** | Many (Llama, Mistral, etc.) | Free curated models |
+| **Speed** | Depends on your hardware | Optimized cloud performance |
+| **Cost** | Free (your hardware) | **Free tier available** |
 | **Offline** | Yes | No (needs endpoint) |
 
 ## Makefile Commands
