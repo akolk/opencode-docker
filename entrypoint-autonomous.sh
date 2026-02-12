@@ -208,7 +208,7 @@ setup_develop_branch() {
             
             # Copy template state files (would be embedded or mounted)
             # For now, create minimal structure
-            cat > .opencode/README.md << 'EOF'
+            cat > .opencode/README.md <<EOF
 # OpenCode Improvement State
 
 This directory tracks AI-driven improvements.
@@ -219,7 +219,7 @@ This directory tracks AI-driven improvements.
 - PLAN.md - Roadmap and goals
 EOF
             
-            cat > .opencode/STATE.md << 'EOF'
+            cat > .opencode/STATE.md <<EOF
 # Current State
 
 **Status**: Initial setup complete
@@ -232,7 +232,7 @@ EOF
 [To be determined autonomously]
 EOF
             
-            cat > .opencode/IMPROVEMENTS.md << 'EOF'
+            cat > .opencode/IMPROVEMENTS.md <<EOF
 # Improvements Log
 
 ## 2026-02-10 - Initial Setup
@@ -240,7 +240,7 @@ EOF
 - **Details**: Created develop branch and state tracking
 EOF
             
-            cat > .opencode/PLAN.md << 'EOF'
+            cat > .opencode/PLAN.md <<EOF
 # Improvement Plan
 
 ## Autonomous Goals
@@ -291,7 +291,7 @@ run_autonomous_improvement() {
     fi
     
     # Build autonomous improvement prompt
-    local prompt=$(cat << 'EOFPROMPT'
+    local prompt=$(cat <<EOFPROMPT
 You are operating in AUTONOMOUS IMPROVEMENT MODE for continuous codebase enhancement.
 
 ## Your Task
@@ -369,7 +369,7 @@ EOFPROMPT
         log_warn "No changes were made by OpenCode"
         
         # Update state to indicate no work needed
-        cat >> .opencode/STATE.md << EOF
+        cat >> .opencode/STATE.md <<EOF
 
 ### $(date -u +"%Y-%m-%d %H:%M:%S UTC")
 **Status**: No improvements needed at this time
@@ -444,7 +444,7 @@ running in autonomous improvement mode."
         git clean -fd
         
         # Update state with failure info
-        cat >> .opencode/STATE.md << EOF
+        cat >> .opencode/STATE.md <<EOF
 
 ### $(date -u +"%Y-%m-%d %H:%M:%S UTC")
 **Status**: Improvement attempt failed
