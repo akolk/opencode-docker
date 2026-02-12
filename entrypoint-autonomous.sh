@@ -141,18 +141,25 @@ check_requirements() {
     git config --global init.defaultBranch main
     
     # Authenticate with GitHub CLI (always do this for mixed environments)
-    echo "${GITHUB_TOKEN}" | gh auth login --with-token
+    log_info "Authenticating with GitHub CLI..."
+    if ! echo "${GITHUB_TOKEN}" | gh auth login --with-token 2>/dev/null; then
+        log_error "Failed to authenticate with GitHub CLI"
+        exit 1
+    fi
     log_info "Authenticated with GitHub CLI"
     
     # Authenticate with Gitea CLI if Gitea is configured
     if [[ -n "${GITEA_HOST}" ]] && [[ -n "${GITEA_TOKEN}" ]]; then
         log_info "Configuring Gitea CLI..."
-        tea login add \
+        if timeout 30 tea login add \
             --name "default" \
             --url "${GITEA_HOST}" \
             --token "${GITEA_TOKEN}" \
-            --default
-        log_info "Authenticated with Gitea: ${GITEA_HOST}"
+            --default 2>/dev/null; then
+            log_info "Authenticated with Gitea: ${GITEA_HOST}"
+        else
+            log_warn "Failed to authenticate with Gitea, continuing without Gitea support"
+        fi
     fi
     
     log_info "Requirements check passed"
