@@ -28,14 +28,14 @@ RUN case "${TARGETARCH}" in \
     rm -rf /tmp/gh_2.63.2_linux_*
 
 # Install Gitea CLI (tea) for Gitea support
-# Using GitHub releases for tea CLI
+# Using gitea.com releases (not GitHub)
 ARG TARGETARCH
 RUN case "${TARGETARCH}" in \
         amd64) TEA_ARCH="amd64" ;; \
         arm64) TEA_ARCH="arm64" ;; \
         *) echo "Unsupported architecture: ${TARGETARCH}" && exit 1 ;; \
     esac && \
-    curl -fsSL "https://github.com/gitea/tea/releases/download/v0.9.0/tea-0.9.0-linux-${TEA_ARCH}" -o /usr/local/bin/tea && \
+    curl -fsSL "https://gitea.com/gitea/tea/releases/download/v0.11.1/tea-0.11.1-linux-${TEA_ARCH}" -o /usr/local/bin/tea && \
     chmod +x /usr/local/bin/tea
 
 # Create non-root user
