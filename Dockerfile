@@ -15,12 +15,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Install GitHub CLI (gh) for PR creation
-# Multi-arch support: detect architecture and download appropriate binary
-RUN ARCH=$(uname -m) && \
-    case $ARCH in \
-        x86_64) GH_ARCH="amd64" ;; \
-        aarch64) GH_ARCH="arm64" ;; \
-        *) echo "Unsupported architecture: $ARCH" && exit 1 ;; \
+# Use TARGETARCH for multi-arch builds
+ARG TARGETARCH
+RUN case "${TARGETARCH}" in \
+        amd64) GH_ARCH="amd64" ;; \
+        arm64) GH_ARCH="arm64" ;; \
+        *) echo "Unsupported architecture: ${TARGETARCH}" && exit 1 ;; \
     esac && \
     curl -fsSL "https://github.com/cli/cli/releases/download/v2.63.2/gh_2.63.2_linux_${GH_ARCH}.tar.gz" | \
     tar -xz -C /tmp && \
@@ -28,13 +28,14 @@ RUN ARCH=$(uname -m) && \
     rm -rf /tmp/gh_2.63.2_linux_*
 
 # Install Gitea CLI (tea) for Gitea support
-RUN ARCH=$(uname -m) && \
-    case $ARCH in \
-        x86_64) TEA_ARCH="amd64" ;; \
-        aarch64) TEA_ARCH="arm64" ;; \
-        *) echo "Unsupported architecture: $ARCH" && exit 1 ;; \
+# Using GitHub releases for tea CLI
+ARG TARGETARCH
+RUN case "${TARGETARCH}" in \
+        amd64) TEA_ARCH="amd64" ;; \
+        arm64) TEA_ARCH="arm64" ;; \
+        *) echo "Unsupported architecture: ${TARGETARCH}" && exit 1 ;; \
     esac && \
-    curl -fsSL "https://dl.gitea.com/tea/latest/tea-latest-linux-${TEA_ARCH}" -o /usr/local/bin/tea && \
+    curl -fsSL "https://github.com/gitea/tea/releases/download/v0.9.0/tea-0.9.0-linux-${TEA_ARCH}" -o /usr/local/bin/tea && \
     chmod +x /usr/local/bin/tea
 
 # Create non-root user
