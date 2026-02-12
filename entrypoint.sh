@@ -147,13 +147,25 @@ check_requirements() {
     git config --global user.name "${GIT_AUTHOR_NAME}"
     git config --global user.email "${GIT_AUTHOR_EMAIL}"
     
-    # Authenticate with GitHub CLI (always do this for mixed environments)
+    # Authenticate with GitHub CLI using GH_TOKEN environment variable
     log_info "Authenticating with GitHub CLI..."
-    if ! echo "${GITHUB_TOKEN}" | gh auth login --with-token 2>/dev/null; then
-        log_error "Failed to authenticate with GitHub CLI"
-        exit 1
+    export GH_TOKEN="${GITHUB_TOKEN}"
+    
+    # Test authentication
+    if ! gh auth status &>/dev/null; then
+        log_warn "GitHub CLI not authenticated, attempting login..."
+        if ! echo "${GITHUB_TOKEN}" | gh auth login --with-token --hostname github.com 2>&1 | head -5; then
+            log_error "Failed to authenticate with GitHub CLI"
+            log_info "Continuing anyway - some operations may fail"
+        fi
     fi
-    log_info "Authenticated with GitHub CLI"
+    
+    # Verify authentication worked
+    if gh auth status &>/dev/null; then
+        log_info "Authenticated with GitHub CLI"
+    else
+        log_warn "GitHub CLI authentication status unclear, continuing..."
+    fi
 
     # Authenticate with Gitea CLI if Gitea is configured
     if [[ -n "${GITEA_HOST}" ]] && [[ -n "${GITEA_TOKEN}" ]]; then
