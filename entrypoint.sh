@@ -373,7 +373,7 @@ EOFSCRIPT
     
     # Run opencode - it will analyze and may create files
     # We capture output but also let it work interactively if needed
-    if timeout 1800 opencode --task "${prompt}" 2>&1 | tee "${OUTPUT_DIR}/${repo//\//_}_analysis.log"; then
+    if timeout 1800 opencode-cli --model "${OPENCODE_PROVIDER}/${OPENCODE_MODEL}" "${prompt}" 2>&1 | tee "${OUTPUT_DIR}/${repo//\//_}_analysis.log"; then
         log_info "OpenCode analysis completed"
     else
         log_warn "OpenCode analysis may have completed with warnings or timeout"
