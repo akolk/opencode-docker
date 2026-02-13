@@ -49,7 +49,7 @@ spec:
               # value: "codellama:13b-code"
               # value: "mistral:7b"
             
-            # OpenCode Zen configuration (used when MODEL_PROVIDER=zen)
+            # OpenCode Zen configuration (used when MODEL_PROVIDER=opencode)
             # Zen provides free models including:
             # - "kimi-k2.5-free" (Kimi K2.5 Free)
             # - "minimax-m2-free" (MiniMax M2 Free)

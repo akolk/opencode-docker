@@ -14,7 +14,7 @@
         }
       }
     },
-    "zen": {
+    "opencode": {
       "npm": "@ai-sdk/openai-compatible",
       "name": "OpenCode Zen",
       "options": {
