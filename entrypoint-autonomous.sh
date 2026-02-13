@@ -346,12 +346,22 @@ You are on the "develop" branch. Your changes will be tested and auto-merged to 
 2. Read .opencode/STATE.md for context
 3. Read .opencode/PLAN.md for goals
 4. Check .opencode/IMPROVEMENTS.md to avoid repetition
-5. Determine the single best improvement to make NOW
-6. IMPLEMENT the improvement
-7. Run tests (if available)
-8. Update .opencode/STATE.md with analysis
-9. Update .opencode/IMPROVEMENTS.md with what you did
-10. Commit with a descriptive message
+5. Check .opencode/PENDING_ISSUES.md for GitHub issues to address
+6. Determine the single best improvement to make NOW
+7. IMPLEMENT the improvement
+8. Run tests (if available)
+9. If you fixed a GitHub issue:
+   - Reference the issue in your commit (e.g., "Fixes #123")
+   - Update .opencode/PENDING_ISSUES.md to mark it as fixed
+   - Update .opencode/IMPROVEMENTS.md with "Closes #123"
+10. Update .opencode/STATE.md with analysis
+11. Commit with a descriptive message
+
+## GitHub Issue Handling
+- If PENDING_ISSUES.md contains open issues, prioritize fixing those first
+- When fixing an issue, include "Fixes #NUMBER" in your commit message
+- Update PENDING_ISSUES.md to mark the issue as closed after commit
+- The next PR merge will automatically close the GitHub issue
 
 ## Constraints
 - Make SMALL, INCREMENTAL improvements
