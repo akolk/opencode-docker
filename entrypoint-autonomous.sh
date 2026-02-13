@@ -183,19 +183,35 @@ check_github_issues() {
     log_info "Checking GitHub issues for ${repo}..."
     
     # Check for blocking issues
-    blocking_issues=$(gh issue list --repo "${repo}" --label "opencode-priority" --json number,title --jq '.[] | "#\(.number): \(.title)"' 2>/dev/null || echo "")
+    blocking_issues=$(gh issue list --repo "${repo}" --label "opencode-priority" --json number,title,status --jq '.[] | select(.status == "OPEN") | "#\(.number): \(.title)"' 2>/dev/null || echo "")
     
     if [[ -n "${blocking_issues}" ]]; then
-        log_warn "Found priority issues that need attention:"
+        log_warn "Found priority open issues that need attention:"
         echo "${blocking_issues}"
+        
+        # Get first priority issue number
+        first_issue=$(gh issue list --repo "${repo}" --label "opencode-priority" --json number --jq '.[] | select(.status == "OPEN") | .number' 2>/dev/null | head -1 || echo "")
+        
+        if [[ -n "${first_issue}" ]]; then
+            log_info "Fetching details for issue #${first_issue}..."
+            local issue_details
+            issue_details=$(gh issue view "${first_issue}" --repo "${repo}" --json title,body --jq '{
+                title: .title,
+                body: .body
+            }' 2>/dev/null || echo "{}")
+            
+            # Write issue to TODO file for OpenCode to address
+            local todo_file=".opencode/PENDING_ISSUES.md"
+            cat >> "${todo_file}" <<EOF
+### Issue #${first_issue} - ${issue_details}
+
+[View on GitHub](https://github.com/${repo}/issues/${first_issue})
+EOF
+            git add "${todo_file}" 2>/dev/null || true
+        fi
+        
+        log_warn "Will address these issues in the next autonomous improvement cycle"
         return 0
-    fi
-    
-    # Check for questions
-    questions=$(gh issue list --repo "${repo}" --label "opencode-question" --json number,title --jq '.[] | "#\(.number): \(.title)"' 2>/dev/null || echo "")
-    if [[ -n "${questions}" ]]; then
-        log_warn "Questions from maintainers:"
-        echo "${questions}"
     fi
     
     return 1
@@ -675,7 +691,7 @@ process_repo() {
         # TODO: Implement Gitea issue checking
     else
         if check_github_issues "${repo}"; then
-            log_warn "Priority issues found - addressing those first"
+            log_info "GitHub issues found - will address them in autonomous improvements"
         fi
     fi
     
