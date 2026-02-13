@@ -59,7 +59,7 @@ USER opencode
 WORKDIR /home/opencode
 
 # Copy configuration files
-COPY --chown=opencode:opencode opencode.json /home/opencode/.config/opencode/opencode.json
+# COPY --chown=opencode:opencode opencode.json /home/opencode/.config/opencode/opencode.json
 COPY --chown=opencode:opencode prompt.txt /home/opencode/prompt.txt
 COPY --chown=opencode:opencode entrypoint.sh /home/opencode/entrypoint.sh
 
