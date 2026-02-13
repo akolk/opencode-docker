@@ -9,7 +9,7 @@ OLLAMA_MODEL="${OLLAMA_MODEL:-codellama:7b-code}"
 ZEN_HOST="${ZEN_HOST:-https://opencode.ai/api/zen/v1}"
 ZEN_MODEL="${ZEN_MODEL:-kimi-k2.5-free}"
 ZEN_API_KEY="${ZEN_API_KEY:-local}"
-MODEL_PROVIDER="${MODEL_PROVIDER:-ollama}"  # Options: ollama, zen
+MODEL_PROVIDER="${MODEL_PROVIDER:-ollama}"  # Options: ollama, opencode
 
 # Git Provider Configuration
 GIT_PROVIDER="${GIT_PROVIDER:-auto}"  # Options: github, gitea, auto
@@ -109,14 +109,14 @@ configure_model() {
             export OPENCODE_MODEL="${OLLAMA_MODEL}"
             log_info "Using Ollama: ${OLLAMA_HOST} with model ${OLLAMA_MODEL}"
             ;;
-        "zen")
-            export OPENCODE_PROVIDER="zen"
+        "opencode")
+            export OPENCODE_PROVIDER="opencode"
             export OPENCODE_MODEL="${ZEN_MODEL}"
             log_info "Using OpenCode Zen: ${ZEN_HOST} with model ${ZEN_MODEL}"
             log_info "Available Zen models: kimi-k2.5-free, minimax-m2-free"
             ;;
         *)
-            log_error "Unknown model provider: ${MODEL_PROVIDER}. Use 'ollama' or 'zen'"
+            log_error "Unknown model provider: ${MODEL_PROVIDER}. Use 'ollama' or 'opencode'"
             exit 1
             ;;
     esac
@@ -679,8 +679,8 @@ main() {
     if [[ "${MODEL_PROVIDER}" == "ollama" ]]; then
         log_info "Ollama Host: ${OLLAMA_HOST}"
         log_info "Model: ${OLLAMA_MODEL}"
-    elif [[ "${MODEL_PROVIDER}" == "zen" ]]; then
-        log_info "Zen Host: ${ZEN_HOST}"
+    elif [[ "${MODEL_PROVIDER}" == "opencode" ]]; then
+        log_info "OpenCode Zen Host: ${ZEN_HOST}"
         log_info "Model: ${ZEN_MODEL}"
         log_info "Available models: kimi-k2.5-free, minimax-m2-free"
     fi
