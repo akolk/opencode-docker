@@ -44,7 +44,8 @@ RUN useradd -m -s /bin/bash opencode
 # Install OpenCode CLI
 RUN curl -fsSL https://opencode.ai/install | bash && \
     mv /root/.opencode /home/opencode/ && \
-    chown -R opencode:opencode /home/opencode/.opencode
+    chown -R opencode:opencode /home/opencode/.opencode && \
+    ln -sf /home/opencode/.opencode/bin/opencode /home/opencode/.opencode/bin/opencode-cli
 
 # Set environment variables
 ENV PATH="/home/opencode/.opencode/bin:${PATH}"
