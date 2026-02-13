@@ -374,7 +374,7 @@ EOFPROMPT
     # Write prompt to file to avoid bash interpretation issues
     echo "${prompt}" > "${prompt_file}"
 
-    if timeout 1800 opencode --model "${OPENCODE_PROVIDER}/${OPENCODE_MODEL}" "$(cat ${prompt_file})" 2>&1 | tee "${analysis_output}"; then
+    if timeout 1800 opencode run --model ${OPENCODE_PROVIDER}/${OPENCODE_MODEL} "$(cat ${prompt_file})" 2>&1 | tee "${analysis_output}"; then
         log_info "Autonomous improvement completed"
     else
         log_warn "OpenCode analysis completed with warnings or timeout"
