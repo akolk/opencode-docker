@@ -6,12 +6,14 @@ FROM node:20-slim
 # Prevent interactive prompts during apt-get
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install dependencies: git, curl, ca-certificates, and gh CLI
+# Install dependencies: git, curl, ca-certificates, python3, and gh CLI
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     curl \
     ca-certificates \
     jq \
+    python3 \
+    python3-pip \
     && rm -rf /var/lib/apt/lists/*
 
 # Install GitHub CLI (gh) for PR creation
