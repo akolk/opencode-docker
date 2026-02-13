@@ -606,6 +606,35 @@ See commits for detailed changes.
     return 0
 }
 
+# Sync develop branch with main after PR merge
+sync_develop_with_main() {
+    local repo=$1
+    local provider=$2
+    
+    log_info "Syncing ${BRANCH_WORK} branch with ${BRANCH_MAIN}..."
+    
+    # Fetch latest changes
+    git fetch origin
+    
+    # Checkout develop branch
+    git checkout ${BRANCH_WORK}
+    
+    # Merge main into develop to keep it up to date
+    if git merge origin/${BRANCH_MAIN} --no-edit -m "chore: Sync ${BRANCH_WORK} with ${BRANCH_MAIN} after PR merge"; then
+        log_info "Successfully merged ${BRANCH_MAIN} into ${BRANCH_WORK}"
+        
+        # Push the updated develop branch
+        if git push origin ${BRANCH_WORK}; then
+            log_info "Pushed updated ${BRANCH_WORK} branch"
+        else
+            log_warn "Failed to push ${BRANCH_WORK} branch - may already be up to date"
+        fi
+    else
+        log_warn "Could not merge ${BRANCH_MAIN} into ${BRANCH_WORK} - may have conflicts"
+        log_info "Continuing anyway - next run will handle it"
+    fi
+}
+
 # Process a single repository
 process_repo() {
     local repo=$1
@@ -656,6 +685,9 @@ process_repo() {
         
         # Create PR to main
         create_pr_and_merge "${repo}" "${provider}"
+        
+        # Sync develop branch with main so next run starts from current state
+        sync_develop_with_main "${repo}" "${provider}"
     else
         log_error "Improvement failed for ${repo}"
         return 1
