@@ -614,12 +614,49 @@ See commits for detailed changes.
             if gh pr merge "${pr_url}" --auto --squash 2>&1; then
                 log_info "Auto-merge enabled for PR"
             else
-                log_warn "Could not enable auto-merge - may need manual review or tests still running"
-            fi
-        fi
+        log_warn "Could not enable auto-merge - may need manual review or tests still running"
+    fi
+    
+    # Close related GitHub issues that were addressed
+    close_addressed_issues "${repo}"
+fi
     fi
     
     return 0
+}
+
+# Close GitHub issues that were addressed by this PR
+close_addressed_issues() {
+    local repo=$1
+    
+    log_info "Checking for issues to close..."
+    
+    # Find all open issues with opencode-priority label
+    local issues_to_close
+    issues_to_close=$(gh issue list --repo "${repo}" \
+        --label "opencode-priority" \
+        --state open \
+        --json number,title \
+        --jq '.[] | select(.title | contains("OpenCode") or contains("issue")) | .number' \
+        2>/dev/null || echo "")
+    
+    if [[ -z "${issues_to_close}" ]]; then
+        log_info "No issues to close"
+        return 0
+    fi
+    
+    log_info "Found issues that may be addressed: ${issues_to_close}"
+    
+    # For now, only close if PR title contains "fix" or "resolve"
+    # This prevents accidental closure
+    if [[ "${pr_title}" =~ (fix|resolve|close) ]]; then
+        while IFS= read -r issue_num; do
+            if [[ -n "${issue_num}" ]]; then
+                log_info "Closing issue #${issue_num}..."
+                gh issue close "${issue_num}" --repo "${repo}" --comment "Automatically closed by OpenCode - addressed in PR merged to main"
+            fi
+        done <<< "${issues_to_close}"
+    fi
 }
 
 # Sync develop branch with main after PR merge
